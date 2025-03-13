@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -10,18 +13,6 @@ import (
 
 func setContentTypeHeader(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-}
-
-func pathHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/":
-		homeHandler(w, r)
-	case "/contact":
-		contactHandler(w, r)
-	default:
-		// http.NotFound(w, r)
-		http.Error(w, "Page not found", http.StatusNotFound)
-	}
 }
 
 func galleryHandler(w http.ResponseWriter, r *http.Request) {
@@ -32,22 +23,36 @@ func galleryHandler(w http.ResponseWriter, r *http.Request) {
 
 func faqHandler(w http.ResponseWriter, r *http.Request) {
 	setContentTypeHeader(w)
-	fmt.Fprint(w, `<h1>FAQ</h1>`)
+	executeTemplate(w, "faq.gohtml")
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
 	setContentTypeHeader(w)
-	fmt.Fprint(w, `<h1>Contact Page</h1><p>Wanna connect? email me at
-	 <a href="mailto:eddie.m.menefee@gmail.com">eddie.m.menefee@gmail.com</p>`)
+	executeTemplate(w, "contact.gohtml")
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	setContentTypeHeader(w)
-	fmt.Fprint(w, "<h1>Test 2!</h1>")
+	executeTemplate(w, "home.gohtml")
+}
+
+func executeTemplate(w http.ResponseWriter, filePath string) {
+	tplPath := filepath.Join("templates", filePath)
+	tpl, err := template.ParseFiles(tplPath)
+	if err != nil {
+		log.Printf("parsing template: %v", err)
+		http.Error(w, "There was an error parsing the template.", http.StatusInternalServerError)
+		return
+	}
+	err = tpl.Execute(w, nil)
+	if err != nil {
+		log.Printf("executing template: %v", err)
+		http.Error(w, "There was an error executing the template.", http.StatusInternalServerError)
+		return
+	}
 }
 
 func main() {
-	// http.HandleFunc("/", pathHandler)
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", homeHandler)
