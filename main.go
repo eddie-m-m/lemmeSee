@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func setContentTypeHeader(w http.ResponseWriter) {
@@ -21,6 +22,12 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 		// http.NotFound(w, r)
 		http.Error(w, "Page not found", http.StatusNotFound)
 	}
+}
+
+func galleryHandler(w http.ResponseWriter, r *http.Request) {
+	galleryID := chi.URLParam(r, "galleryID")
+	setContentTypeHeader(w)
+	fmt.Fprint(w, "<h1>Gallery ID: "+galleryID+"</h1>")
 }
 
 func faqHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,9 +49,11 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// http.HandleFunc("/", pathHandler)
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 	r.Get("/", homeHandler)
 	r.Get("/contact", contactHandler)
 	r.Get("/faq", faqHandler)
+	r.Get("/galleries/{galleryID}", galleryHandler)
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
